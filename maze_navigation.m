@@ -104,22 +104,31 @@ try
         brick.MoveMotorAngleRel('D', SCAN_SPEED, 90, 'Brake');
         brick.WaitForMotor('D');
         pause(0.3);
-        raw_left = brick.UltrasonicDist(2);
-        dist_left = cleanDistance(raw_left);
+        dist_left = brick.UltrasonicDist(2);
+        % Filter glitches
+        if abs(dist_left - 32.6) < 2 || abs(dist_left - 32) < 2 || abs(dist_left - 33) < 2
+            dist_left = 255;
+        end
 
         % Look FORWARD
         brick.MoveMotorAngleRel('D', SCAN_SPEED, -90, 'Brake');
         brick.WaitForMotor('D');
         pause(0.3);
-        raw_forward = brick.UltrasonicDist(2);
-        dist_forward = cleanDistance(raw_forward);
+        dist_forward = brick.UltrasonicDist(2);
+        % Filter glitches
+        if abs(dist_forward - 32.6) < 2 || abs(dist_forward - 32) < 2 || abs(dist_forward - 33) < 2
+            dist_forward = 255;
+        end
 
         % Look RIGHT
         brick.MoveMotorAngleRel('D', SCAN_SPEED, -90, 'Brake');
         brick.WaitForMotor('D');
         pause(0.3);
-        raw_right = brick.UltrasonicDist(2);
-        dist_right = cleanDistance(raw_right);
+        dist_right = brick.UltrasonicDist(2);
+        % Filter glitches
+        if abs(dist_right - 32.6) < 2 || abs(dist_right - 32) < 2 || abs(dist_right - 33) < 2
+            dist_right = 255;
+        end
 
         % Center head
         brick.MoveMotorAngleRel('D', SCAN_SPEED, 90, 'Brake');
@@ -270,13 +279,3 @@ pause(0.3);
 brick.beep();
 pause(0.3);
 brick.beep();
-
-%% HELPER FUNCTION - Clean sensor reading
-function clean_dist = cleanDistance(raw_dist)
-    % Filter out common sensor glitches
-    if abs(raw_dist - 32.6) < 2 || abs(raw_dist - 32) < 2 || abs(raw_dist - 33) < 2
-        clean_dist = 255;  % Treat as clear
-    else
-        clean_dist = raw_dist;
-    end
-end
