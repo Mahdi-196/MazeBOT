@@ -5,11 +5,11 @@
 % Sensors: Port 1 (color), Port 2 (ultrasonic)
 
 %% CONFIGURATION
-FORWARD_SPEED = -35;      % Negative = forward (motors reversed)
+FORWARD_SPEED = -40;      % Faster to get out of loops
 TURN_SPEED = 40;
-OBSTACLE_DIST = 40;       % Turn when obstacle closer than this
-TOO_CLOSE = 20;           % Emergency turn
-MOVE_TIME = 0.8;          % Move forward in short bursts
+OBSTACLE_DIST = 30;       % Turn when obstacle closer (was 40)
+TOO_CLOSE = 15;           % Emergency turn (was 20)
+MOVE_TIME = 1.5;          % Move LONGER to escape loops (was 0.8)
 TURN_TIME = 0.65;         % 90 degree turn duration
 RUNTIME_MINUTES = 10;
 
@@ -66,6 +66,11 @@ try
         %% CHECK COLOR SENSOR - Priority #1
         color = brick.ColorCode(1);
 
+        % Debug output
+        if color > 0 && color ~= last_color
+            fprintf('[%.0fs] COLOR DETECTED: %d\n', toc(start_time), color);
+        end
+
         if color ~= last_color && color > 0
 
             switch color
@@ -73,6 +78,7 @@ try
                     % BLUE = GOAL REACHED!
                     fprintf('[%.0fs] *** BLUE GOAL REACHED! ***\n', toc(start_time));
                     brick.StopMotor('AB', 'Brake');
+                    pause(0.3);
                     brick.beep();
                     pause(0.5);
                     brick.beep();
@@ -81,20 +87,24 @@ try
                     break;
 
                 case COLOR_RED
-                    fprintf('[%.0fs] RED - Stopping 1 second\n', toc(start_time));
+                    fprintf('[%.0fs] RED - Stopping 1 second + BEEP\n', toc(start_time));
                     brick.StopMotor('AB', 'Brake');
+                    pause(0.3);
                     brick.beep();
                     pause(1);
+                    fprintf('[%.0fs] RED - Continuing\n', toc(start_time));
 
                 case COLOR_GREEN
                     fprintf('[%.0fs] GREEN - Beeping 3 times\n', toc(start_time));
                     brick.StopMotor('AB', 'Brake');
+                    pause(0.3);
                     brick.beep();
                     pause(0.5);
                     brick.beep();
                     pause(0.5);
                     brick.beep();
                     pause(0.5);
+                    fprintf('[%.0fs] GREEN - Continuing\n', toc(start_time));
 
                 case COLOR_YELLOW
                     fprintf('[%.0fs] Yellow detected\n', toc(start_time));
@@ -105,6 +115,12 @@ try
 
         %% CHECK ULTRASONIC - Avoid obstacles
         dist = brick.UltrasonicDist(2);
+
+        % Filter out weird 32.6cm readings (sensor glitch)
+        if abs(dist - 32.6) < 0.5
+            dist = 255;  % Treat as no obstacle
+        end
+
         fprintf('[%.0fs] Dist: %.1fcm', toc(start_time), dist);
 
         %% EMERGENCY - Too close!
@@ -169,7 +185,7 @@ try
             %% SMART TURN DECISION - Avoid backtracking
 
             % If stuck (turned many times), force turn around
-            if consecutive_turns > 4
+            if consecutive_turns > 3
                 fprintf('     -> STUCK! Turning around\n');
                 brick.MoveMotor('B', -TURN_SPEED);
                 brick.MoveMotor('A', TURN_SPEED);
@@ -214,6 +230,13 @@ try
                 consecutive_turns = consecutive_turns + 1;
             end
 
+            brick.StopMotor('AB', 'Brake');
+            pause(0.3);
+
+            % Move forward after turning to get away from wall
+            fprintf('     Moving forward after turn\n');
+            brick.MoveMotor('AB', FORWARD_SPEED);
+            pause(2.0);  % Longer movement to escape loop
             brick.StopMotor('AB', 'Brake');
             pause(0.3);
 
