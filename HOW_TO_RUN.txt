@@ -1,0 +1,47 @@
+========================================
+MAZEBOT - HOW TO RUN
+========================================
+
+MAIN SCRIPT (Use This!):
+========================
+maze_navigation
+  - Navigates from YELLOW start to BLUE goal
+  - Stops at BLUE and beeps 2 times
+  - Responds to RED (stop 1s) and GREEN (beep 3x)
+  - Avoids walls with head scanning
+  - Smart turn logic (doesn't backtrack)
+
+
+TESTING SCRIPTS:
+===============
+test_motors     - Test that motors work
+test_sensors    - Test ultrasonic sensor
+test_colors     - Test color sensor responses
+drive_with_colors - Drive forward with color detection (for video)
+
+
+QUICK START:
+===========
+1. Connect:
+   brick = ConnectBrick('BALL');
+
+2. Run maze:
+   maze_navigation
+
+3. Place robot on YELLOW, press Enter
+4. Robot navigates to BLUE goal!
+
+
+FOR COLOR MILESTONE VIDEO:
+==========================
+Use: drive_with_colors
+  - Put red, blue, green papers on floor
+  - Robot drives over and responds correctly
+
+
+TIPS:
+=====
+- Robot stops at BLUE automatically
+- Press Ctrl+C to stop anytime
+- If hitting walls, decrease FORWARD_SPEED in script
+- If turns wrong angle, adjust TURN_TIME
