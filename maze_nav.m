@@ -70,21 +70,52 @@ while toc(start_time) < 600 && ~goal
 
     fprintf('[%.0fs] D=%dcm', toc(start_time), round(d));
 
-    if d < 30
-        % Turn right
-        fprintf(' TURN\n');
+    if d < 10
+        % Too close - back up first!
+        fprintf(' TOO CLOSE - BACKUP\n');
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
+
+        % Back up
+        brick.MoveMotor('AB', -FORWARD_SPEED);
+        pause(1.5);
+        brick.StopMotor('AB', 'Brake');
+        pause(0.3);
+
+        % Turn right
         brick.MoveMotor('B', -TURN_SPEED);
         brick.MoveMotor('A', TURN_SPEED);
         pause(TURN_TIME);
         brick.StopMotor('AB', 'Brake');
-        pause(0.2);
-    else
-        % Go forward
-        fprintf(' GO\n');
+        pause(0.3);
+
+        % Move forward after turn
         brick.MoveMotor('AB', FORWARD_SPEED);
         pause(2);
+        brick.StopMotor('AB', 'Brake');
+
+    elseif d < 30
+        % Obstacle - turn right
+        fprintf(' TURN RIGHT\n');
+        brick.StopMotor('AB', 'Brake');
+        pause(0.2);
+
+        brick.MoveMotor('B', -TURN_SPEED);
+        brick.MoveMotor('A', TURN_SPEED);
+        pause(TURN_TIME);
+        brick.StopMotor('AB', 'Brake');
+        pause(0.3);
+
+        % MUST move forward after turn
+        brick.MoveMotor('AB', FORWARD_SPEED);
+        pause(2);
+        brick.StopMotor('AB', 'Brake');
+
+    else
+        % Clear - go forward longer
+        fprintf(' CLEAR - GO\n');
+        brick.MoveMotor('AB', FORWARD_SPEED);
+        pause(3);
         brick.StopMotor('AB', 'Brake');
     end
 
