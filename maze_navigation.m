@@ -50,16 +50,6 @@ pause(1);
 fprintf('1... GO!\n\n');
 brick.beep();
 
-%% HELPER FUNCTION - Clean sensor reading
-function clean_dist = cleanDistance(raw_dist)
-    % Filter out common sensor glitches
-    if abs(raw_dist - 32.6) < 2 || abs(raw_dist - 32) < 2 || abs(raw_dist - 33) < 2
-        clean_dist = 255;  % Treat as clear
-    else
-        clean_dist = raw_dist;
-    end
-end
-
 %% NAVIGATION
 start_time = tic;
 goal_reached = false;
@@ -280,3 +270,13 @@ pause(0.3);
 brick.beep();
 pause(0.3);
 brick.beep();
+
+%% HELPER FUNCTION - Clean sensor reading
+function clean_dist = cleanDistance(raw_dist)
+    % Filter out common sensor glitches
+    if abs(raw_dist - 32.6) < 2 || abs(raw_dist - 32) < 2 || abs(raw_dist - 33) < 2
+        clean_dist = 255;  % Treat as clear
+    else
+        clean_dist = raw_dist;
+    end
+end
