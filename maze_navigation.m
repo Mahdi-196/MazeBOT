@@ -9,7 +9,7 @@ FORWARD_SPEED = -40;      % Faster to get out of loops
 TURN_SPEED = 40;
 OBSTACLE_DIST = 30;       % Turn when obstacle closer (was 40)
 TOO_CLOSE = 15;           % Emergency turn (was 20)
-MOVE_TIME = 1.5;          % Move LONGER to escape loops (was 0.8)
+MOVE_TIME = 2.0;          % Move LONGER to escape loops (was 1.5)
 TURN_TIME = 0.65;         % 90 degree turn duration
 RUNTIME_MINUTES = 10;
 
@@ -37,12 +37,15 @@ end
 fprintf('✓ Connected!\n');
 brick.beep();
 
-% Center head
-brick.MoveMotorAngleRel('D', 30, 0, 'Brake');
-pause(0.5);
+% Set head to coast so you can position it manually
+brick.StopMotor('D', 'Coast');
+fprintf('✓ Head motor set to coast - you can position it manually\n');
 
-fprintf('\nPlace robot on YELLOW start\n');
-input('Press Enter to start...', 's');
+fprintf('\nPosition head to point FORWARD, then place robot on YELLOW start\n');
+input('Press Enter when ready...', 's');
+
+% Lock head in forward position
+brick.StopMotor('D', 'Brake');
 
 fprintf('\n3... ');
 brick.beep();
@@ -129,9 +132,9 @@ try
             brick.StopMotor('AB', 'Brake');
             pause(0.2);
 
-            % Back up
+            % Back up LONGER
             brick.MoveMotor('AB', -FORWARD_SPEED);
-            pause(0.6);
+            pause(1.2);  % Was 0.6
             brick.StopMotor('AB', 'Brake');
             pause(0.2);
 
@@ -152,6 +155,14 @@ try
 
             brick.StopMotor('AB', 'Brake');
             pause(0.3);
+
+            % Move forward LONG after emergency to escape area
+            fprintf('     Emergency forward escape\n');
+            brick.MoveMotor('AB', FORWARD_SPEED);
+            pause(3.0);  % Move 3 seconds to get away
+            brick.StopMotor('AB', 'Brake');
+            pause(0.3);
+
             consecutive_turns = consecutive_turns + 1;
 
         %% OBSTACLE AHEAD - Scan and decide
@@ -236,7 +247,7 @@ try
             % Move forward after turning to get away from wall
             fprintf('     Moving forward after turn\n');
             brick.MoveMotor('AB', FORWARD_SPEED);
-            pause(2.0);  % Longer movement to escape loop
+            pause(2.5);  % Even longer to escape loops (was 2.0)
             brick.StopMotor('AB', 'Brake');
             pause(0.3);
 
