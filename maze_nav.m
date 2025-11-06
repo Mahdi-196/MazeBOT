@@ -31,7 +31,7 @@ last_col = 0;
 
 while toc(start_time) < 600 && ~goal
 
-    % Check color sensor
+    % Check color sensor with confirmation
     col = brick.ColorCode(1);
 
     % Debug: show all color detections
@@ -39,19 +39,36 @@ while toc(start_time) < 600 && ~goal
         fprintf('[COLOR=%d] ', col);
     end
 
-    switch col
+    % If we detect a color, confirm it with 2 more readings
+    if (col == 2 || col == 3 || col == 5) && col ~= last_col
+        pause(0.1);
+        col2 = brick.ColorCode(1);
+        pause(0.1);
+        col3 = brick.ColorCode(1);
+
+        % Only act if at least 2 out of 3 readings match
+        if col == col2 || col == col3 || col2 == col3
+            confirmed_col = col;
+        else
+            confirmed_col = 0;  % Ignore inconsistent readings
+        end
+    else
+        confirmed_col = col;
+    end
+
+    switch confirmed_col
         case 5  % RED - Stop 1 second
-            if col ~= last_col
-                fprintf('\n🔴 RED detected! Stopping 1 second...\n');
+            if confirmed_col ~= last_col
+                fprintf('\n🔴 RED confirmed! Stopping 1 second...\n');
                 brick.StopMotor('AB', 'Brake');
                 brick.playTone(50, 800, 500);
                 pause(1);
-                last_col = col;
+                last_col = confirmed_col;
             end
 
         case 2  % BLUE - GOAL!
-            if col ~= last_col
-                fprintf('\n🔵 BLUE GOAL! Beeping twice...\n');
+            if confirmed_col ~= last_col
+                fprintf('\n🔵 BLUE GOAL confirmed! Beeping twice...\n');
                 brick.StopMotor('AB', 'Brake');
                 pause(0.5);
                 brick.playTone(50, 800, 500);
@@ -59,23 +76,23 @@ while toc(start_time) < 600 && ~goal
                 brick.playTone(50, 800, 500);
                 pause(0.6);
                 goal = true;
-                last_col = col;
+                last_col = confirmed_col;
                 break;
             end
 
         case 3  % GREEN - Beep 3 times, continue
-            if col ~= last_col
-                fprintf('\n🟢 GREEN detected! Beeping 3 times...\n');
+            if confirmed_col ~= last_col
+                fprintf('\n🟢 GREEN confirmed! Beeping 3 times...\n');
                 brick.StopMotor('AB', 'Brake');
                 for i = 1:3
                     brick.playTone(50, 800, 500);
                     pause(0.6);
                 end
-                last_col = col;
+                last_col = confirmed_col;
             end
 
         otherwise
-            % No special color, keep going
+            % No special color or inconsistent readings, keep going
     end
 
     % Check distance forward
