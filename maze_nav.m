@@ -31,7 +31,7 @@ last_col = 0;
 
 while toc(start_time) < 600 && ~goal
 
-    % Check color
+    % Check color sensor
     col = brick.ColorCode(1);
 
     % Debug: show all color detections
@@ -39,37 +39,44 @@ while toc(start_time) < 600 && ~goal
         fprintf('[COLOR=%d] ', col);
     end
 
-    if col == 2 && col ~= last_col  % Blue = GOAL
-        fprintf('\n*** BLUE GOAL DETECTED! ***\n');
-        brick.StopMotor('AB', 'Brake');
-        pause(0.5);
-        brick.beep();
-        pause(0.5);
-        brick.beep();
-        pause(0.5);
-        goal = true;
-        break;
-    end
+    switch col
+        case 5  % RED - Stop 1 second
+            if col ~= last_col
+                fprintf('\n🔴 RED detected! Stopping 1 second...\n');
+                brick.StopMotor('AB', 'Brake');
+                brick.playTone(50, 800, 500);
+                pause(1);
+                last_col = col;
+            end
 
-    if col == 5 && col ~= last_col  % Red - stop 1s
-        fprintf('[RED] ');
-        brick.StopMotor('AB', 'Brake');
-        brick.beep();
-        pause(1);
-    end
+        case 2  % BLUE - GOAL!
+            if col ~= last_col
+                fprintf('\n🔵 BLUE GOAL! Beeping twice...\n');
+                brick.StopMotor('AB', 'Brake');
+                pause(0.5);
+                brick.playTone(50, 800, 500);
+                pause(0.6);
+                brick.playTone(50, 800, 500);
+                pause(0.6);
+                goal = true;
+                last_col = col;
+                break;
+            end
 
-    if col == 3 && col ~= last_col  % Green - beep 3x, keep going
-        fprintf('[GREEN] ');
-        brick.StopMotor('AB', 'Brake');
-        brick.beep();
-        pause(0.5);
-        brick.beep();
-        pause(0.5);
-        brick.beep();
-        pause(0.5);
-    end
+        case 3  % GREEN - Beep 3 times, continue
+            if col ~= last_col
+                fprintf('\n🟢 GREEN detected! Beeping 3 times...\n');
+                brick.StopMotor('AB', 'Brake');
+                for i = 1:3
+                    brick.playTone(50, 800, 500);
+                    pause(0.6);
+                end
+                last_col = col;
+            end
 
-    last_col = col;
+        otherwise
+            % No special color, keep going
+    end
 
     % Check distance forward
     d = brick.UltrasonicDist(2);
