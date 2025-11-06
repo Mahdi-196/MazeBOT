@@ -110,18 +110,41 @@ while toc(start_time) < 600 && ~goal
         end
 
     elseif d > 50
-        % CLEAR - Go straight for longer!
-        fprintf('CLEAR - Go straight 5s\n');
+        % CLEAR - Go straight with monitoring!
+        fprintf('CLEAR - Go straight!\n');
         brick.MoveMotor('AB', FORWARD_SPEED);
-        pause(5);
+
+        % Move but monitor for obstacles
+        move_start = tic;
+        while toc(move_start) < 5
+            check = brick.UltrasonicDist(2);
+            if check < 15
+                fprintf('  Obstacle detected during movement!\n');
+                break;
+            end
+            pause(0.5);
+        end
+
         brick.StopMotor('AB', 'Brake');
+        pause(0.5);  % Let sensor stabilize after stopping
 
     else
-        % Moderate distance - go forward cautiously
-        fprintf('Forward 2s\n');
+        % Moderate distance - go forward with monitoring
+        fprintf('Forward\n');
         brick.MoveMotor('AB', FORWARD_SPEED);
-        pause(2);
+
+        move_start = tic;
+        while toc(move_start) < 2
+            check = brick.UltrasonicDist(2);
+            if check < 15
+                fprintf('  Stop - obstacle!\n');
+                break;
+            end
+            pause(0.3);
+        end
+
         brick.StopMotor('AB', 'Brake');
+        pause(0.3);  % Stabilize
     end
 
     pause(0.2);
