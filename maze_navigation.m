@@ -171,22 +171,26 @@ try
         %% Choose direction with intelligent preferences
         move_time = 3.0;  % Default move time
 
-        % Prefer forward if it's open and we're not backtracking
-        if dist_forward > 50 && ~strcmp(last_direction, 'back')
-            fprintf('-> FORWARD (prefer straight, %dcm clear)\n', round(dist_forward));
-            direction = 'forward';
-            if dist_forward > 100
-                move_time = 4.0;  % Move longer when very clear
-            end
+        % Find the clearest path
+        [best_dist, best_idx] = max([dist_left, dist_forward, dist_right]);
 
-        % Forward is decent and we didn't just come from there
-        elseif dist_forward > 40 && ~strcmp(last_direction, 'back')
-            fprintf('-> FORWARD (good path, %dcm)\n', round(dist_forward));
+        % Adjust move time based on how clear the path is
+        if best_dist > 200
+            move_time = 6.0;  % Very clear - go far!
+        elseif best_dist > 100
+            move_time = 5.0;  % Clear - go long
+        elseif best_dist > 50
+            move_time = 4.0;  % Pretty clear
+        end
+
+        % Prefer forward if it's clear
+        if dist_forward > 50 && dist_forward >= best_dist - 30
+            fprintf('-> FORWARD (straight, %dcm, %.1fs)\n', round(dist_forward), move_time);
             direction = 'forward';
 
-        % Right is clearly best
-        elseif dist_right > dist_left + 20 && dist_right > dist_forward + 20 && dist_right > 40
-            fprintf('-> RIGHT (best option, %dcm)\n', round(dist_right));
+        % Turn toward clearest path
+        elseif best_idx == 3  % Right is best
+            fprintf('-> RIGHT (clearest, %dcm, %.1fs)\n', round(dist_right), move_time);
             brick.MoveMotor('B', -TURN_SPEED);
             brick.MoveMotor('A', TURN_SPEED);
             pause(TURN_TIME);
@@ -195,9 +199,8 @@ try
             direction = 'right';
             consecutive_backs = 0;
 
-        % Left is clearly best
-        elseif dist_left > dist_right + 20 && dist_left > dist_forward + 20 && dist_left > 40
-            fprintf('-> LEFT (best option, %dcm)\n', round(dist_left));
+        elseif best_idx == 1  % Left is best
+            fprintf('-> LEFT (clearest, %dcm, %.1fs)\n', round(dist_left), move_time);
             brick.MoveMotor('B', TURN_SPEED);
             brick.MoveMotor('A', -TURN_SPEED);
             pause(TURN_TIME);
@@ -206,27 +209,8 @@ try
             direction = 'left';
             consecutive_backs = 0;
 
-        % Pick biggest available path
-        elseif dist_right >= dist_left && dist_right > 30
-            fprintf('-> RIGHT (pick biggest, %dcm)\n', round(dist_right));
-            brick.MoveMotor('B', -TURN_SPEED);
-            brick.MoveMotor('A', TURN_SPEED);
-            pause(TURN_TIME);
-            brick.StopMotor('AB', 'Brake');
-            pause(0.3);
-            direction = 'right';
-
-        elseif dist_left > 30
-            fprintf('-> LEFT (pick biggest, %dcm)\n', round(dist_left));
-            brick.MoveMotor('B', TURN_SPEED);
-            brick.MoveMotor('A', -TURN_SPEED);
-            pause(TURN_TIME);
-            brick.StopMotor('AB', 'Brake');
-            pause(0.3);
-            direction = 'left';
-
-        else
-            fprintf('-> FORWARD (default)\n');
+        else  % Forward by default
+            fprintf('-> FORWARD (default, %dcm, %.1fs)\n', round(dist_forward), move_time);
             direction = 'forward';
         end
 
