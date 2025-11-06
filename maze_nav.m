@@ -34,23 +34,32 @@ while toc(start_time) < 600 && ~goal
     % Check color
     col = brick.ColorCode(1);
 
-    if col == 2 && col ~= last_col  % Blue
-        fprintf('\n*** BLUE GOAL! ***\n');
+    % Debug: show all color detections
+    if col > 0 && col ~= last_col
+        fprintf('[COLOR=%d] ', col);
+    end
+
+    if col == 2 && col ~= last_col  % Blue = GOAL
+        fprintf('\n*** BLUE GOAL DETECTED! ***\n');
         brick.StopMotor('AB', 'Brake');
+        pause(0.5);
         brick.beep();
         pause(0.5);
         brick.beep();
+        pause(0.5);
         goal = true;
         break;
     end
 
-    if col == 5 && col ~= last_col  % Red
+    if col == 5 && col ~= last_col  % Red - stop 1s
+        fprintf('[RED] ');
         brick.StopMotor('AB', 'Brake');
         brick.beep();
         pause(1);
     end
 
-    if col == 3 && col ~= last_col  % Green
+    if col == 3 && col ~= last_col  % Green - beep 3x, keep going
+        fprintf('[GREEN] ');
         brick.StopMotor('AB', 'Brake');
         brick.beep();
         pause(0.5);
