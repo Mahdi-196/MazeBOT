@@ -1,4 +1,4 @@
-%% MAZE NAVIGATION - Straight Priority + Left Wall Following
+%% SIMPLE MAZE NAVIGATION - Back to Basics
 % Motors: B (left), A (right) - REVERSED
 % Sensors: Port 1 (color), Port 2 (ultrasonic)
 
@@ -7,7 +7,7 @@ TURN_SPEED = 45;
 TURN_TIME = 0.65;
 
 fprintf('========================================\n');
-fprintf('MAZE NAVIGATION - Left Wall Following\n');
+fprintf('MAZE NAVIGATION\n');
 fprintf('========================================\n');
 
 if ~exist('brick', 'var')
@@ -19,10 +19,10 @@ brick.beep();
 
 brick.StopMotor('D', 'Coast');
 
-fprintf('\nPosition sensor pointing FORWARD\n');
+fprintf('\nReady\n');
 input('Press Enter...', 's');
 
-fprintf('3... 2... 1... GO!\n\n');
+fprintf('GO!\n\n');
 brick.beep();
 
 start_time = tic;
@@ -34,7 +34,7 @@ while toc(start_time) < 600 && ~goal
     % Check color
     col = brick.ColorCode(1);
 
-    if col == 2 && col ~= last_col  % Blue = GOAL
+    if col == 2 && col ~= last_col  % Blue
         fprintf('\n*** BLUE GOAL! ***\n');
         brick.StopMotor('AB', 'Brake');
         brick.beep();
@@ -45,14 +45,12 @@ while toc(start_time) < 600 && ~goal
     end
 
     if col == 5 && col ~= last_col  % Red
-        fprintf('[%.0fs] RED\n', toc(start_time));
         brick.StopMotor('AB', 'Brake');
         brick.beep();
         pause(1);
     end
 
     if col == 3 && col ~= last_col  % Green
-        fprintf('[%.0fs] GREEN\n', toc(start_time));
         brick.StopMotor('AB', 'Brake');
         brick.beep();
         pause(0.5);
@@ -64,102 +62,36 @@ while toc(start_time) < 600 && ~goal
 
     last_col = col;
 
-    % Check distance forward
+    % Check distance
     d = brick.UltrasonicDist(2);
 
-    fprintf('[%.0fs] D=%dcm ', toc(start_time), round(d));
+    fprintf('[%.0fs] %dcm ', toc(start_time), round(d));
 
-    %% DECISION LOGIC
-
-    if d < 15
-        % BLOCKED - Turn right until clear
-        fprintf('BLOCKED - Turn right\n');
+    if d < 25
+        % Turn right
+        fprintf('TURN\n');
+        brick.MoveMotor('B', -TURN_SPEED);
+        brick.MoveMotor('A', TURN_SPEED);
+        pause(TURN_TIME);
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
-
-        % Back up a bit
-        brick.MoveMotor('AB', -FORWARD_SPEED);
-        pause(0.8);
-        brick.StopMotor('AB', 'Brake');
-        pause(0.2);
-
-        % Turn right until path is clear
-        turned = false;
-        for turn_count = 1:4  % Max 4 turns (360 degrees)
-            brick.MoveMotor('B', -TURN_SPEED);
-            brick.MoveMotor('A', TURN_SPEED);
-            pause(TURN_TIME);
-            brick.StopMotor('AB', 'Brake');
-            pause(0.3);
-
-            % Check if clear now
-            check_d = brick.UltrasonicDist(2);
-            fprintf('  Check: %dcm\n', round(check_d));
-            if check_d > 30
-                fprintf('  Clear! Moving forward\n');
-                turned = true;
-                break;
-            end
-        end
-
-        if turned
-            % Move forward after finding clear path
-            brick.MoveMotor('AB', FORWARD_SPEED);
-            pause(2.5);
-            brick.StopMotor('AB', 'Brake');
-        end
-
-    elseif d > 50
-        % CLEAR - Go straight with monitoring!
-        fprintf('CLEAR - Go straight!\n');
-        brick.MoveMotor('AB', FORWARD_SPEED);
-
-        % Move but monitor for obstacles
-        move_start = tic;
-        while toc(move_start) < 5
-            check = brick.UltrasonicDist(2);
-            if check < 15
-                fprintf('  Obstacle detected during movement!\n');
-                break;
-            end
-            pause(0.5);
-        end
-
-        brick.StopMotor('AB', 'Brake');
-        pause(0.5);  % Let sensor stabilize after stopping
-
     else
-        % Moderate distance - go forward with monitoring
-        fprintf('Forward\n');
+        % Go straight
+        fprintf('GO\n');
         brick.MoveMotor('AB', FORWARD_SPEED);
-
-        move_start = tic;
-        while toc(move_start) < 2
-            check = brick.UltrasonicDist(2);
-            if check < 15
-                fprintf('  Stop - obstacle!\n');
-                break;
-            end
-            pause(0.3);
-        end
-
+        pause(3);
         brick.StopMotor('AB', 'Brake');
-        pause(0.3);  % Stabilize
+        pause(0.2);
     end
 
-    pause(0.2);
+    pause(0.1);
 end
 
 if goal
-    fprintf('\n========================================\n');
-    fprintf('SUCCESS!\n');
-    fprintf('Time: %.0fs\n', toc(start_time));
-    fprintf('========================================\n');
+    fprintf('\nSUCCESS! Time: %.0fs\n', toc(start_time));
 else
-    fprintf('\nTime limit\n');
+    fprintf('\nTime up\n');
 end
 
 brick.StopMotor('ABD', 'Coast');
-brick.beep();
-pause(0.3);
 brick.beep();
