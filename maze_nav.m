@@ -62,18 +62,51 @@ while toc(start_time) < 600 && ~goal
 
     last_col = col;
 
-    % Check distance
+    % Check distance forward
     d = brick.UltrasonicDist(2);
 
-    fprintf('[%.0fs] %dcm ', toc(start_time), round(d));
+    fprintf('[%.0fs] F=%dcm ', toc(start_time), round(d));
 
     if d < 25
-        % Turn right
-        fprintf('TURN\n');
-        brick.MoveMotor('B', -TURN_SPEED);
-        brick.MoveMotor('A', TURN_SPEED);
-        pause(TURN_TIME);
-        brick.StopMotor('AB', 'Brake');
+        % OBSTACLE - Scan left and right with head
+        fprintf('SCAN ');
+
+        % Look LEFT
+        brick.MoveMotorAngleRel('D', 40, 90, 'Brake');
+        pause(0.4);
+        d_left = brick.UltrasonicDist(2);
+
+        % Look RIGHT
+        brick.MoveMotorAngleRel('D', 40, -180, 'Brake');
+        pause(0.4);
+        d_right = brick.UltrasonicDist(2);
+
+        % Center head
+        brick.MoveMotorAngleRel('D', 40, 90, 'Brake');
+        pause(0.3);
+
+        fprintf('L=%d R=%d ', round(d_left), round(d_right));
+
+        % Choose best direction
+        if d_left > d_right && d_left > 30
+            fprintf('TURN LEFT\n');
+            brick.MoveMotor('B', TURN_SPEED);   % Left backward
+            brick.MoveMotor('A', -TURN_SPEED);  % Right forward
+            pause(TURN_TIME);
+            brick.StopMotor('AB', 'Brake');
+        elseif d_right > 30
+            fprintf('TURN RIGHT\n');
+            brick.MoveMotor('B', -TURN_SPEED);  % Left forward
+            brick.MoveMotor('A', TURN_SPEED);   % Right backward
+            pause(TURN_TIME);
+            brick.StopMotor('AB', 'Brake');
+        else
+            fprintf('BOTH BLOCKED - BACK UP\n');
+            brick.MoveMotor('AB', -FORWARD_SPEED);  % Backward
+            pause(1.5);
+            brick.StopMotor('AB', 'Brake');
+        end
+
         pause(0.2);
     else
         % Go straight
