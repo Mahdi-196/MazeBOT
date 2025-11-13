@@ -127,12 +127,29 @@ while toc(start_time) < 600 && ~goal
     brick.MoveMotorAngleRel('D', HEAD_SPEED, HEAD_ANGLE, 'Brake');
     pause(0.5);
 
-    %% DECISION LOGIC - Left-wall following priority
-    WALL_THRESHOLD = 25;  % Distance to consider as "blocked"
+    %% DECISION LOGIC - Left-wall following with safe distance
+    MIN_WALL_DIST = 15;      % Too close - will collide!
+    IDEAL_WALL_DIST = 30;    % Perfect following distance
+    MAX_WALL_DIST = 50;      % Wall is "gone" - opening detected
+    FORWARD_CLEAR = 25;      % Minimum forward clearance
 
-    if d_left > WALL_THRESHOLD
-        % LEFT IS FREE - Turn left and go (priority 1)
-        fprintf('-> TURN LEFT & GO\n');
+    if d_left < MIN_WALL_DIST
+        % TOO CLOSE TO LEFT WALL - Move away slightly (priority 0)
+        fprintf('-> TOO CLOSE! ADJUST RIGHT\n');
+        brick.MoveMotor('B', -TURN_SPEED);
+        brick.MoveMotor('A', TURN_SPEED);
+        pause(TURN_TIME * 0.3);  % Small adjustment
+        brick.StopMotor('AB', 'Brake');
+        pause(0.2);
+
+        brick.MoveMotor('AB', FORWARD_SPEED);
+        pause(1.0);
+        brick.StopMotor('AB', 'Brake');
+        pause(0.2);
+
+    elseif d_left > MAX_WALL_DIST && d_forward > FORWARD_CLEAR
+        % LEFT OPENING DETECTED - Turn left to follow wall (priority 1)
+        fprintf('-> LEFT OPENING - TURN LEFT\n');
         brick.MoveMotor('B', TURN_SPEED);
         brick.MoveMotor('A', -TURN_SPEED);
         pause(TURN_TIME);
@@ -144,17 +161,35 @@ while toc(start_time) < 600 && ~goal
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
 
-    elseif d_forward > WALL_THRESHOLD
-        % FORWARD IS FREE - Go straight (priority 2)
-        fprintf('-> GO FORWARD\n');
+    elseif d_forward > FORWARD_CLEAR
+        % FORWARD CLEAR - Keep going straight (priority 2)
+        % Adjust slightly to maintain ideal wall distance
+        if d_left < IDEAL_WALL_DIST - 5
+            fprintf('-> GO (adjust right)\n');
+            brick.MoveMotor('B', -TURN_SPEED);
+            brick.MoveMotor('A', TURN_SPEED);
+            pause(TURN_TIME * 0.15);  % Tiny correction
+            brick.StopMotor('AB', 'Brake');
+            pause(0.1);
+        elseif d_left > IDEAL_WALL_DIST + 5
+            fprintf('-> GO (adjust left)\n');
+            brick.MoveMotor('B', TURN_SPEED);
+            brick.MoveMotor('A', -TURN_SPEED);
+            pause(TURN_TIME * 0.15);  % Tiny correction
+            brick.StopMotor('AB', 'Brake');
+            pause(0.1);
+        else
+            fprintf('-> GO STRAIGHT\n');
+        end
+
         brick.MoveMotor('AB', FORWARD_SPEED);
         pause(1.5);
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
 
-    elseif d_right > WALL_THRESHOLD
-        % RIGHT IS FREE - Turn right (priority 3)
-        fprintf('-> TURN RIGHT & GO\n');
+    elseif d_right > FORWARD_CLEAR
+        % FORWARD BLOCKED, RIGHT FREE - Turn right (priority 3)
+        fprintf('-> BLOCKED AHEAD - TURN RIGHT\n');
         brick.MoveMotor('B', -TURN_SPEED);
         brick.MoveMotor('A', TURN_SPEED);
         pause(TURN_TIME);
@@ -168,7 +203,7 @@ while toc(start_time) < 600 && ~goal
 
     else
         % ALL BLOCKED - Turn around 180 degrees (priority 4)
-        fprintf('-> BLOCKED! TURN AROUND\n');
+        fprintf('-> DEAD END - TURN AROUND\n');
         brick.MoveMotor('B', -TURN_SPEED);
         brick.MoveMotor('A', TURN_SPEED);
         pause(TURN_TIME * 2);
