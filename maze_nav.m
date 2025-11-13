@@ -19,7 +19,10 @@ end
 fprintf('Connected!\n');
 brick.beep();
 
-brick.StopMotor('D', 'Coast');
+% Reset head to center position
+fprintf('Resetting head to center...\n');
+brick.ResetMotorAngle('D');
+brick.StopMotor('D', 'Brake');
 
 fprintf('\nReady\n');
 input('Press Enter...', 's');
@@ -99,33 +102,29 @@ while toc(start_time) < 600 && ~goal
 
     %% LEFT-WALL FOLLOWING ALGORITHM
     % Check distances in three directions using HEAD SCANNING
-    % Head motor (D) rotates the ultrasonic sensor
+    % Head motor (D) rotates the ultrasonic sensor (uses absolute positioning)
 
-    % 1. Check FORWARD (head at center)
+    % 1. Check FORWARD (head at center = 0 degrees)
+    brick.MoveMotorAngleAbs('D', HEAD_SPEED, 0, 'Brake');
+    pause(0.6);
     d_forward = brick.UltrasonicDist(2);
     fprintf('[%.0fs] F:%dcm ', toc(start_time), round(d_forward));
 
     % 2. Turn HEAD LEFT to check left side
-    brick.MoveMotorAngleRel('D', HEAD_SPEED, HEAD_ANGLE, 'Brake');
-    pause(0.5);  % Wait for head to finish turning
-
+    brick.MoveMotorAngleAbs('D', HEAD_SPEED, HEAD_ANGLE, 'Brake');
+    pause(0.6);
     d_left = brick.UltrasonicDist(2);
     fprintf('L:%dcm ', round(d_left));
 
-    % 3. Turn HEAD back to center
-    brick.MoveMotorAngleRel('D', HEAD_SPEED, -HEAD_ANGLE, 'Brake');
-    pause(0.5);
-
-    % 4. Turn HEAD RIGHT to check right side
-    brick.MoveMotorAngleRel('D', HEAD_SPEED, -HEAD_ANGLE, 'Brake');
-    pause(0.5);
-
+    % 3. Turn HEAD RIGHT to check right side
+    brick.MoveMotorAngleAbs('D', HEAD_SPEED, -HEAD_ANGLE, 'Brake');
+    pause(0.6);
     d_right = brick.UltrasonicDist(2);
     fprintf('R:%dcm ', round(d_right));
 
-    % 5. Turn HEAD back to center
-    brick.MoveMotorAngleRel('D', HEAD_SPEED, HEAD_ANGLE, 'Brake');
-    pause(0.5);
+    % 4. Return HEAD to center for movement
+    brick.MoveMotorAngleAbs('D', HEAD_SPEED, 0, 'Brake');
+    pause(0.6);
 
     %% DECISION LOGIC - Left-wall following with safe distance
     MIN_WALL_DIST = 15;      % Too close - will collide!
@@ -136,8 +135,8 @@ while toc(start_time) < 600 && ~goal
     if d_left < MIN_WALL_DIST
         % TOO CLOSE TO LEFT WALL - Move away slightly (priority 0)
         fprintf('-> TOO CLOSE! ADJUST RIGHT\n');
-        brick.MoveMotor('B', -TURN_SPEED);
-        brick.MoveMotor('A', TURN_SPEED);
+        brick.MoveMotor('B', TURN_SPEED);
+        brick.MoveMotor('A', -TURN_SPEED);
         pause(TURN_TIME * 0.3);  % Small adjustment
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
@@ -150,8 +149,8 @@ while toc(start_time) < 600 && ~goal
     elseif d_left > MAX_WALL_DIST && d_forward > FORWARD_CLEAR
         % LEFT OPENING DETECTED - Turn left to follow wall (priority 1)
         fprintf('-> LEFT OPENING - TURN LEFT\n');
-        brick.MoveMotor('B', TURN_SPEED);
-        brick.MoveMotor('A', -TURN_SPEED);
+        brick.MoveMotor('B', -TURN_SPEED);
+        brick.MoveMotor('A', TURN_SPEED);
         pause(TURN_TIME);
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
@@ -166,15 +165,15 @@ while toc(start_time) < 600 && ~goal
         % Adjust slightly to maintain ideal wall distance
         if d_left < IDEAL_WALL_DIST - 5
             fprintf('-> GO (adjust right)\n');
-            brick.MoveMotor('B', -TURN_SPEED);
-            brick.MoveMotor('A', TURN_SPEED);
+            brick.MoveMotor('B', TURN_SPEED);
+            brick.MoveMotor('A', -TURN_SPEED);
             pause(TURN_TIME * 0.15);  % Tiny correction
             brick.StopMotor('AB', 'Brake');
             pause(0.1);
         elseif d_left > IDEAL_WALL_DIST + 5
             fprintf('-> GO (adjust left)\n');
-            brick.MoveMotor('B', TURN_SPEED);
-            brick.MoveMotor('A', -TURN_SPEED);
+            brick.MoveMotor('B', -TURN_SPEED);
+            brick.MoveMotor('A', TURN_SPEED);
             pause(TURN_TIME * 0.15);  % Tiny correction
             brick.StopMotor('AB', 'Brake');
             pause(0.1);
@@ -190,8 +189,8 @@ while toc(start_time) < 600 && ~goal
     elseif d_right > FORWARD_CLEAR
         % FORWARD BLOCKED, RIGHT FREE - Turn right (priority 3)
         fprintf('-> BLOCKED AHEAD - TURN RIGHT\n');
-        brick.MoveMotor('B', -TURN_SPEED);
-        brick.MoveMotor('A', TURN_SPEED);
+        brick.MoveMotor('B', TURN_SPEED);
+        brick.MoveMotor('A', -TURN_SPEED);
         pause(TURN_TIME);
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
@@ -204,8 +203,8 @@ while toc(start_time) < 600 && ~goal
     else
         % ALL BLOCKED - Turn around 180 degrees (priority 4)
         fprintf('-> DEAD END - TURN AROUND\n');
-        brick.MoveMotor('B', -TURN_SPEED);
-        brick.MoveMotor('A', TURN_SPEED);
+        brick.MoveMotor('B', TURN_SPEED);
+        brick.MoveMotor('A', -TURN_SPEED);
         pause(TURN_TIME * 2);
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
