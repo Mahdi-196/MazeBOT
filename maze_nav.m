@@ -5,8 +5,9 @@
 FORWARD_SPEED = -45;
 TURN_SPEED = 45;
 TURN_TIME = 0.65;
-HEAD_SPEED = 30;
-HEAD_ANGLE = 90;  % Degrees to turn head left/right
+HEAD_SPEED = 50;       % Increased from 30 for faster movement
+HEAD_ANGLE = 90;       % Degrees to turn head left/right
+HEAD_WAIT = 1.0;       % Wait time for head to finish turning
 
 fprintf('========================================\n');
 fprintf('MAZE NAVIGATION\n');
@@ -102,29 +103,34 @@ while toc(start_time) < 600 && ~goal
 
     %% LEFT-WALL FOLLOWING ALGORITHM
     % Check distances in three directions using HEAD SCANNING
-    % Head motor (D) rotates the ultrasonic sensor (uses absolute positioning)
+    % Head motor (D) rotates the ultrasonic sensor
 
     % 1. Check FORWARD (head at center = 0 degrees)
     brick.MoveMotorAngleAbs('D', HEAD_SPEED, 0, 'Brake');
-    pause(0.6);
+    pause(HEAD_WAIT);
+    angle_check = brick.GetMotorAngle('D');
     d_forward = brick.UltrasonicDist(2);
     fprintf('[%.0fs] F:%dcm ', toc(start_time), round(d_forward));
 
     % 2. Turn HEAD LEFT to check left side
     brick.MoveMotorAngleAbs('D', HEAD_SPEED, HEAD_ANGLE, 'Brake');
-    pause(0.6);
+    pause(HEAD_WAIT);
+    angle_check = brick.GetMotorAngle('D');
+    fprintf('(head@%d) ', round(angle_check));
     d_left = brick.UltrasonicDist(2);
     fprintf('L:%dcm ', round(d_left));
 
     % 3. Turn HEAD RIGHT to check right side
     brick.MoveMotorAngleAbs('D', HEAD_SPEED, -HEAD_ANGLE, 'Brake');
-    pause(0.6);
+    pause(HEAD_WAIT);
+    angle_check = brick.GetMotorAngle('D');
+    fprintf('(head@%d) ', round(angle_check));
     d_right = brick.UltrasonicDist(2);
     fprintf('R:%dcm ', round(d_right));
 
     % 4. Return HEAD to center for movement
     brick.MoveMotorAngleAbs('D', HEAD_SPEED, 0, 'Brake');
-    pause(0.6);
+    pause(HEAD_WAIT);
 
     %% DECISION LOGIC - Left-wall following with safe distance
     MIN_WALL_DIST = 20;      % Too close - will collide! (increased for robot width)
