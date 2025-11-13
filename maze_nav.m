@@ -1,10 +1,12 @@
 %% SIMPLE MAZE NAVIGATION - Back to Basics
-% Motors: B (left), A (right) - REVERSED
-% Sensors: Port 1 (color), Port 2 (ultrasonic)
+% Motors: B (left), A (right) - REVERSED, D (head with ultrasonic)
+% Sensors: Port 1 (color), Port 2 (ultrasonic on head)
 
 FORWARD_SPEED = -45;
 TURN_SPEED = 45;
 TURN_TIME = 0.65;
+HEAD_SPEED = 30;
+HEAD_ANGLE = 90;  % Degrees to turn head left/right
 
 fprintf('========================================\n');
 fprintf('MAZE NAVIGATION\n');
@@ -96,45 +98,34 @@ while toc(start_time) < 600 && ~goal
     end
 
     %% LEFT-WALL FOLLOWING ALGORITHM
-    % Check distances in three directions: left, forward, right
+    % Check distances in three directions using HEAD SCANNING
+    % Head motor (D) rotates the ultrasonic sensor
 
-    % 1. Check FORWARD
+    % 1. Check FORWARD (head at center)
     d_forward = brick.UltrasonicDist(2);
     fprintf('[%.0fs] F:%dcm ', toc(start_time), round(d_forward));
 
-    % 2. Turn LEFT to check left side
-    brick.MoveMotor('B', TURN_SPEED);
-    brick.MoveMotor('A', -TURN_SPEED);
-    pause(TURN_TIME);
-    brick.StopMotor('AB', 'Brake');
-    pause(0.2);
+    % 2. Turn HEAD LEFT to check left side
+    brick.MoveMotorAngleRel('D', HEAD_SPEED, HEAD_ANGLE, 'Brake');
+    pause(0.5);  % Wait for head to finish turning
 
     d_left = brick.UltrasonicDist(2);
     fprintf('L:%dcm ', round(d_left));
 
-    % 3. Turn RIGHT back to center, then check right
-    brick.MoveMotor('B', -TURN_SPEED);
-    brick.MoveMotor('A', TURN_SPEED);
-    pause(TURN_TIME);
-    brick.StopMotor('AB', 'Brake');
-    pause(0.2);
+    % 3. Turn HEAD back to center
+    brick.MoveMotorAngleRel('D', HEAD_SPEED, -HEAD_ANGLE, 'Brake');
+    pause(0.5);
 
-    % Now turn RIGHT to check right side
-    brick.MoveMotor('B', -TURN_SPEED);
-    brick.MoveMotor('A', TURN_SPEED);
-    pause(TURN_TIME);
-    brick.StopMotor('AB', 'Brake');
-    pause(0.2);
+    % 4. Turn HEAD RIGHT to check right side
+    brick.MoveMotorAngleRel('D', HEAD_SPEED, -HEAD_ANGLE, 'Brake');
+    pause(0.5);
 
     d_right = brick.UltrasonicDist(2);
     fprintf('R:%dcm ', round(d_right));
 
-    % Turn LEFT back to center position
-    brick.MoveMotor('B', TURN_SPEED);
-    brick.MoveMotor('A', -TURN_SPEED);
-    pause(TURN_TIME);
-    brick.StopMotor('AB', 'Brake');
-    pause(0.2);
+    % 5. Turn HEAD back to center
+    brick.MoveMotorAngleRel('D', HEAD_SPEED, HEAD_ANGLE, 'Brake');
+    pause(0.5);
 
     %% DECISION LOGIC - Left-wall following priority
     WALL_THRESHOLD = 25;  % Distance to consider as "blocked"
