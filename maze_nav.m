@@ -127,62 +127,62 @@ while toc(start_time) < 600 && ~goal
     pause(0.6);
 
     %% DECISION LOGIC - Left-wall following with safe distance
-    MIN_WALL_DIST = 15;      % Too close - will collide!
-    IDEAL_WALL_DIST = 30;    % Perfect following distance
-    MAX_WALL_DIST = 50;      % Wall is "gone" - opening detected
+    MIN_WALL_DIST = 20;      % Too close - will collide! (increased for robot width)
+    IDEAL_WALL_DIST = 35;    % Perfect following distance
+    MAX_WALL_DIST = 60;      % Wall is "gone" - opening detected
     FORWARD_CLEAR = 25;      % Minimum forward clearance
 
     if d_left < MIN_WALL_DIST
-        % TOO CLOSE TO LEFT WALL - Move away slightly (priority 0)
-        fprintf('-> TOO CLOSE! ADJUST RIGHT\n');
+        % TOO CLOSE TO LEFT WALL - Move away (priority 0)
+        fprintf('-> TOO CLOSE LEFT! MOVE RIGHT\n');
         brick.MoveMotor('B', -TURN_SPEED);
         brick.MoveMotor('A', TURN_SPEED);
-        pause(TURN_TIME * 0.3);  % Small adjustment
+        pause(TURN_TIME * 0.5);  % Turn right away from wall
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
 
         brick.MoveMotor('AB', FORWARD_SPEED);
-        pause(1.0);
+        pause(1.2);
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
 
     elseif d_left > MAX_WALL_DIST && d_forward > FORWARD_CLEAR
-        % LEFT OPENING DETECTED - Turn left to follow wall (priority 1)
+        % LEFT OPENING DETECTED - Turn left cautiously (priority 1)
         fprintf('-> LEFT OPENING - TURN LEFT\n');
         brick.MoveMotor('B', TURN_SPEED);
         brick.MoveMotor('A', -TURN_SPEED);
-        pause(TURN_TIME);
+        pause(TURN_TIME * 0.8);  % Gentler turn to avoid over-turning
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
 
         brick.MoveMotor('AB', FORWARD_SPEED);
-        pause(1.5);
+        pause(1.2);
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
 
     elseif d_forward > FORWARD_CLEAR
         % FORWARD CLEAR - Keep going straight (priority 2)
         % Adjust slightly to maintain ideal wall distance
-        if d_left < IDEAL_WALL_DIST - 5
-            fprintf('-> GO (adjust right)\n');
+        if d_left < IDEAL_WALL_DIST - 8
+            fprintf('-> GO (nudge right)\n');
             brick.MoveMotor('B', -TURN_SPEED);
             brick.MoveMotor('A', TURN_SPEED);
-            pause(TURN_TIME * 0.15);  % Tiny correction
+            pause(TURN_TIME * 0.2);  % Small correction
             brick.StopMotor('AB', 'Brake');
             pause(0.1);
-        elseif d_left > IDEAL_WALL_DIST + 5
-            fprintf('-> GO (adjust left)\n');
+        elseif d_left > IDEAL_WALL_DIST + 8
+            fprintf('-> GO (nudge left)\n');
             brick.MoveMotor('B', TURN_SPEED);
             brick.MoveMotor('A', -TURN_SPEED);
-            pause(TURN_TIME * 0.15);  % Tiny correction
+            pause(TURN_TIME * 0.2);  % Small correction
             brick.StopMotor('AB', 'Brake');
             pause(0.1);
         else
-            fprintf('-> GO STRAIGHT\n');
+            fprintf('-> GO STRAIGHT (ideal dist)\n');
         end
 
         brick.MoveMotor('AB', FORWARD_SPEED);
-        pause(1.5);
+        pause(1.3);
         brick.StopMotor('AB', 'Brake');
         pause(0.2);
 
